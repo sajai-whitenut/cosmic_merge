@@ -1,5 +1,5 @@
 {
-  "packageId": "com.sajai.cosmicmerge",
+  "packageId": "com.sajai.cosmicmerger",
   "host": "cosmic-merge-six.vercel.app",
   "name": "Cosmic Merge: Satisfying Physics",
   "launcherName": "CosmicMerge",
@@ -13,7 +13,7 @@
   "backgroundColor": "#020617",
   "enableNotifications": true,
   "startUrl": "/",
-  "iconUrl": "https://cosmic-merge-six.vercel.app/logo512.png",
+  "iconUrl": "https://raw.githubusercontent.com/GoogleChrome/samples/gh-pages/pwa-directory/icons-config/icon-512.png",
   "splashScreenFadeOutDuration": 300,
   "signingKey": {
     "path": "C:\\Users\\sajai\\Documents\\cosmic_merge\\android.keystore",
