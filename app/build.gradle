@@ -22,7 +22,7 @@ plugins {
 
 def twaManifest = [
     applicationId: 'com.sajai.cosmicmerge',
-    hostName: 'com.sajai.cosmicmerge', // The domain being opened in the TWA.
+    hostName: 'cosmic-merge-six.vercel.app', // The domain being opened in the TWA.
     launchUrl: '/', // The start path for the TWA. Must be relative to the domain.
     name: 'Cosmic Merge: Satisfying Physics', // The application name.
     launcherName: 'CosmicMerge', // The name shown on the Android Launcher.

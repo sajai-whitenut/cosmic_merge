@@ -1,6 +1,6 @@
 {
   "packageId": "com.sajai.cosmicmerge",
-  "host": "com.sajai.cosmicmerge",
+  "host": "cosmic-merge-six.vercel.app",
   "name": "Cosmic Merge: Satisfying Physics",
   "launcherName": "CosmicMerge",
   "display": "fullscreen",
