@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Trophy, Play, RotateCcw, Zap, Sparkles, Binary, CircleDot, Info, Settings, Pause, Volume2, VolumeX, X, ChevronRight } from 'lucide-react';
+import { Trophy, Play, RotateCcw, Zap, Sparkles, Binary, CircleDot, Info, Settings, Pause, Volume2, VolumeX, X, ChevronRight, Shield } from 'lucide-react';
 import { CosmicBody, GameState, BODY_TYPES } from './types';
 import { 
   CONTAINER_WIDTH, 
@@ -12,6 +12,48 @@ import {
   SPAWN_DELAY,
   GAME_OVER_Y
 } from './constants';
+
+const PrivacyPolicy: React.FC<{ onBack: () => void }> = ({ onBack }) => (
+  <div className="absolute inset-0 z-[200] bg-slate-950 overflow-y-auto p-6 md:p-12 text-white font-sans flex flex-col items-center">
+    <div className="w-full max-w-2xl">
+      <button 
+        onClick={onBack}
+        className="mb-8 flex items-center gap-2 text-indigo-400 hover:text-indigo-300 transition-colors font-bold uppercase tracking-widest text-xs pointer-events-auto"
+      >
+        <ChevronRight className="w-4 h-4 rotate-180" /> Back to Mission
+      </button>
+      
+      <h1 className="text-4xl font-black italic tracking-tighter mb-8 uppercase">Privacy Policy</h1>
+      
+      <div className="space-y-8 text-slate-300 leading-relaxed pb-20">
+        <section>
+          <h2 className="text-xl font-bold text-white uppercase tracking-tight mb-2">1. Identity & Integrity</h2>
+          <p>Cosmic Merge ("the Game") is designed as a standalone experience. We do not collect, process, or transmit any personally identifiable information (PII).</p>
+        </section>
+        
+        <section>
+          <h2 className="text-xl font-bold text-white uppercase tracking-tight mb-2">2. Data Sovereignty</h2>
+          <p>The Game uses standard Local Storage to store your high score locally on your device. This data is private and never leaves your local hardware.</p>
+        </section>
+        
+        <section>
+          <h2 className="text-xl font-bold text-white uppercase tracking-tight mb-2">3. Static Environment</h2>
+          <p>We do not use third-party analytics, tracking cookies, or advertising SDKs. The binary is static and focused entirely on the merge mechanic.</p>
+        </section>
+        
+        <section>
+          <h2 className="text-xl font-bold text-white uppercase tracking-tight mb-2">4. Age Appropriateness</h2>
+          <p>Since no data is collected, the application is suitable for all ages. We comply with COPPA and global privacy standards by simply not gathering data.</p>
+        </section>
+        
+        <section>
+          <h2 className="text-xl font-bold text-white uppercase tracking-tight mb-2">5. Updates</h2>
+          <p>This policy may be updated. The current version was finalized on April 27, 2026.</p>
+        </section>
+      </div>
+    </div>
+  </div>
+);
 
 const CosmicMerge: React.FC = () => {
   const [gameState, setGameState] = useState<GameState>({
@@ -27,6 +69,7 @@ const CosmicMerge: React.FC = () => {
   const [mousePos, setMousePos] = useState(CONTAINER_WIDTH / 2);
   const [isPaused, setIsPaused] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
+  const [showPrivacy, setShowPrivacy] = useState(false);
   const [shake, setShake] = useState(0);
 
   const containerRef = useRef<HTMLDivElement>(null);
@@ -42,23 +85,107 @@ const CosmicMerge: React.FC = () => {
     try {
       if (!audioCtxRef.current) audioCtxRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
       const ctx = audioCtxRef.current;
+      
+      // Use different frequencies and oscillator types based on body size
+      const frequencies = [880, 783.99, 659.25, 523.25, 440, 392, 329.63, 261.63, 196.00, 130.81];
+      const freq = frequencies[typeIndex % frequencies.length];
+      const duration = 0.1 + (typeIndex * 0.1);
+      
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       
-      const notes = [261.63, 293.66, 329.63, 392.00, 440.00, 523.25, 587.33, 659.25, 783.99, 880.00];
-      const freq = notes[typeIndex % notes.length];
+      // Technical choice: sine for small, triangle for medium, square for large
+      if (typeIndex < 3) {
+        osc.type = 'sine';
+      } else if (typeIndex < 7) {
+        osc.type = 'triangle';
+      } else {
+        osc.type = 'square';
+      }
       
-      osc.type = 'sine';
       osc.frequency.setValueAtTime(freq, ctx.currentTime);
-      gain.gain.setValueAtTime(0.08, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.6);
+      osc.frequency.exponentialRampToValueAtTime(freq * 0.5, ctx.currentTime + duration);
+
+      gain.gain.setValueAtTime(0.1, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + duration);
       
       osc.connect(gain);
       gain.connect(ctx.destination);
       osc.start();
-      osc.stop(ctx.currentTime + 0.6);
+      osc.stop(ctx.currentTime + duration);
+
+      // Add a sub-harmonic "thump" for larger bodies
+      if (typeIndex > 4) {
+        const subOsc = ctx.createOscillator();
+        const subGain = ctx.createGain();
+        subOsc.type = 'sine';
+        subOsc.frequency.setValueAtTime(freq / 2, ctx.currentTime);
+        subGain.gain.setValueAtTime(0.15, ctx.currentTime);
+        subGain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + duration * 1.5);
+        subOsc.connect(subGain);
+        subGain.connect(ctx.destination);
+        subOsc.start();
+        subOsc.stop(ctx.currentTime + duration * 1.5);
+      }
+
+      // Add noise burst for star types
+      if (typeIndex >= 8) {
+        const noiseNodes = 32;
+        const bufferSize = ctx.sampleRate * 0.1;
+        const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+          data[i] = Math.random() * 2 - 1;
+        }
+        const noise = ctx.createBufferSource();
+        noise.buffer = buffer;
+        const noiseGain = ctx.createGain();
+        noiseGain.gain.setValueAtTime(0.05, ctx.currentTime);
+        noiseGain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.2);
+        noise.connect(noiseGain);
+        noiseGain.connect(ctx.destination);
+        noise.start();
+      }
     } catch (e) {}
-  }, []);
+  }, [isMuted]);
+
+  const playDropSound = useCallback(() => {
+    if (isMuted) return;
+    try {
+      if (!audioCtxRef.current) audioCtxRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const ctx = audioCtxRef.current;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(150, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(80, ctx.currentTime + 0.1);
+      gain.gain.setValueAtTime(0.05, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.1);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.1);
+    } catch (e) {}
+  }, [isMuted]);
+
+  const playGameOverSound = useCallback(() => {
+    if (isMuted) return;
+    try {
+      if (!audioCtxRef.current) audioCtxRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const ctx = audioCtxRef.current;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(100, ctx.currentTime);
+      osc.frequency.linearRampToValueAtTime(30, ctx.currentTime + 1.5);
+      gain.gain.setValueAtTime(0.1, ctx.currentTime);
+      gain.gain.linearRampToValueAtTime(0.0001, ctx.currentTime + 1.5);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 1.5);
+    } catch (e) {}
+  }, [isMuted]);
 
   const gameOver = useCallback(() => {
     if (gameState.status !== 'PLAYING') return;
@@ -67,8 +194,8 @@ const CosmicMerge: React.FC = () => {
       localStorage.setItem('cosmic-high-score', newHighScore.toString());
       return { ...prev, status: 'GAMEOVER', highScore: newHighScore };
     });
-    playMergeSound(0);
-  }, [gameState.status, playMergeSound]);
+    playGameOverSound();
+  }, [gameState.status, playGameOverSound]);
 
   const spawnParticle = (x: number, y: number, color: string) => {
     for (let i = 0; i < 8; i++) {
@@ -117,6 +244,7 @@ const CosmicMerge: React.FC = () => {
     setBodies([...bodiesRef.current]);
     setCanDrop(false);
     setDroppingBody(null);
+    playDropSound();
 
     setTimeout(() => {
       setGameState(s => {
@@ -205,7 +333,7 @@ const CosmicMerge: React.FC = () => {
 
             // Haptic feedback
             if (typeof navigator !== 'undefined' && navigator.vibrate) {
-              navigator.vibrate(20);
+              navigator.vibrate(10 + nextIndex * 15);
             }
             continue;
           }
@@ -375,12 +503,14 @@ const CosmicMerge: React.FC = () => {
             </div>
             
             {gameState.status === 'PLAYING' && (
-              <button 
-                onClick={(e) => { e.stopPropagation(); setIsPaused(true); }}
-                className="pointer-events-auto w-10 h-10 flex items-center justify-center bg-white/5 border border-white/10 rounded-2xl backdrop-blur-md hover:bg-white/10 transition-colors"
-              >
-                <Settings className="w-4 h-4 text-white" />
-              </button>
+              <div className="flex gap-2">
+                <button 
+                  onClick={(e) => { e.stopPropagation(); setIsPaused(true); }}
+                  className="pointer-events-auto w-10 h-10 flex items-center justify-center bg-white/5 border border-white/10 rounded-2xl backdrop-blur-md hover:bg-white/10 transition-colors"
+                >
+                  <Settings className="w-4 h-4 text-white" />
+                </button>
+              </div>
             )}
          </div>
       </div>
@@ -406,6 +536,17 @@ const CosmicMerge: React.FC = () => {
                           <span className="font-bold tracking-widest uppercase text-sm">AUDIO ENGINE</span>
                        </div>
                        <span className="text-xs font-black text-white/40">{isMuted ? 'DISABLED' : 'ACTIVE'}</span>
+                    </button>
+
+                    <button 
+                      onClick={() => setShowPrivacy(true)}
+                      className="flex items-center justify-between w-full p-6 bg-white/5 rounded-3xl border border-white/10 hover:bg-white/10 transition-all pointer-events-auto"
+                    >
+                       <div className="flex items-center gap-4">
+                          <Shield className="w-6 h-6 text-indigo-400" />
+                          <span className="font-bold tracking-widest uppercase text-sm">PRIVACY PROTOCOL</span>
+                       </div>
+                       <ChevronRight className="w-4 h-4 opacity-40" />
                     </button>
 
                     <button 
@@ -435,9 +576,17 @@ const CosmicMerge: React.FC = () => {
          {gameState.status === 'START' && (
            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 z-[100] bg-slate-950/80 backdrop-blur-md flex flex-col items-center justify-center">
               <h1 className="text-7xl font-black italic tracking-tighter text-white mb-12 text-center uppercase">COSMIC<br/><span className="text-indigo-400">MERGE</span></h1>
-              <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={startGame} className="px-12 py-5 bg-white text-slate-950 rounded-[2rem] font-black italic tracking-tighter uppercase text-xl shadow-2xl flex items-center gap-4">
-                 <Play className="w-6 h-6 fill-current" /> START MISSION
-              </motion.button>
+              <div className="flex flex-col gap-4 items-center">
+                <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={startGame} className="px-12 py-5 bg-white text-slate-950 rounded-[2rem] font-black italic tracking-tighter uppercase text-xl shadow-2xl flex items-center gap-4">
+                   <Play className="w-6 h-6 fill-current" /> START MISSION
+                </motion.button>
+                <button 
+                  onClick={() => setShowPrivacy(true)}
+                  className="text-[10px] font-black text-white/30 hover:text-white/60 transition-colors uppercase tracking-[0.3em] py-2 pointer-events-auto"
+                >
+                  Privacy Protocol
+                </button>
+              </div>
            </motion.div>
          )}
 
@@ -448,6 +597,20 @@ const CosmicMerge: React.FC = () => {
                <button onClick={startGame} className="px-12 py-5 bg-white text-red-950 rounded-[2rem] font-black italic tracking-tighter text-xl shadow-2xl flex items-center gap-4"><RotateCcw className="w-6 h-6" /> RETRY MISSION</button>
             </motion.div>
          )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showPrivacy && (
+          <motion.div
+            initial={{ y: '100%' }}
+            animate={{ y: 0 }}
+            exit={{ y: '100%' }}
+            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+            className="absolute inset-0 z-[200]"
+          >
+            <PrivacyPolicy onBack={() => setShowPrivacy(false)} />
+          </motion.div>
+        )}
       </AnimatePresence>
     </div>
   );
