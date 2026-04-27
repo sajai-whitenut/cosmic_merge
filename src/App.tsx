@@ -13,42 +13,65 @@ import {
   GAME_OVER_Y
 } from './constants';
 
-const PrivacyPolicy: React.FC<{ onBack: () => void }> = ({ onBack }) => (
-  <div className="absolute inset-0 z-[200] bg-slate-950 overflow-y-auto p-6 md:p-12 text-white font-sans flex flex-col items-center">
-    <div className="w-full max-w-2xl">
+const PrivacyPolicy: React.FC<{ onBack: () => void; isStandalone?: boolean }> = ({ onBack, isStandalone }) => (
+  <div className="absolute inset-0 z-[1000] bg-slate-950 overflow-y-auto p-6 md:p-12 text-white font-sans flex flex-col items-center">
+    <div className="w-full max-w-2xl bg-slate-900/50 p-8 rounded-[3rem] border border-white/5 backdrop-blur-xl">
       <button 
-        onClick={onBack}
-        className="mb-8 flex items-center gap-2 text-indigo-400 hover:text-indigo-300 transition-colors font-bold uppercase tracking-widest text-xs pointer-events-auto"
+        onClick={() => {
+          if (isStandalone) {
+            window.location.href = '/';
+          } else {
+            onBack();
+          }
+        }}
+        className="mb-8 flex items-center gap-2 text-indigo-400 hover:text-indigo-300 transition-colors font-bold uppercase tracking-widest text-[10px] pointer-events-auto"
       >
-        <ChevronRight className="w-4 h-4 rotate-180" /> Back to Mission
+        <ChevronRight className="w-3 h-3 rotate-180" /> Return to Mission
       </button>
       
-      <h1 className="text-4xl font-black italic tracking-tighter mb-8 uppercase">Privacy Policy</h1>
+      <div className="flex items-center gap-3 mb-8">
+        <div className="w-10 h-10 rounded-2xl bg-indigo-500/20 flex items-center justify-center border border-indigo-500/30">
+          <Shield className="w-5 h-5 text-indigo-400" />
+        </div>
+        <h1 className="text-3xl font-black italic tracking-tighter uppercase leading-none">Privacy Protocol</h1>
+      </div>
       
-      <div className="space-y-8 text-slate-300 leading-relaxed pb-20">
+      <div className="space-y-10 text-slate-400 leading-relaxed pb-10 text-sm">
         <section>
-          <h2 className="text-xl font-bold text-white uppercase tracking-tight mb-2">1. Identity & Integrity</h2>
-          <p>Cosmic Merge ("the Game") is designed as a standalone experience. We do not collect, process, or transmit any personally identifiable information (PII).</p>
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-[10px] font-bold px-2 py-0.5 bg-white/5 rounded-full text-white/40 tracking-widest uppercase">01</span>
+            <h2 className="text-sm font-bold text-white uppercase tracking-wider">Identity Integrity</h2>
+          </div>
+          <p>Cosmic Merge ("the Game") is designed as a standalone digital experience. We do not collect, process, or transmit any personally identifiable information (PII). No user accounts, emails, or personal data points are required.</p>
         </section>
         
         <section>
-          <h2 className="text-xl font-bold text-white uppercase tracking-tight mb-2">2. Data Sovereignty</h2>
-          <p>The Game uses standard Local Storage to store your high score locally on your device. This data is private and never leaves your local hardware.</p>
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-[10px] font-bold px-2 py-0.5 bg-white/5 rounded-full text-white/40 tracking-widest uppercase">02</span>
+            <h2 className="text-sm font-bold text-white uppercase tracking-wider">Data Sovereignty</h2>
+          </div>
+          <p>The Game utilizes local persistent storage solely to preserve your High Score locally on your device hardware. This data remains on your device and is never synchronized with external servers or shared with third parties.</p>
         </section>
         
         <section>
-          <h2 className="text-xl font-bold text-white uppercase tracking-tight mb-2">3. Static Environment</h2>
-          <p>We do not use third-party analytics, tracking cookies, or advertising SDKs. The binary is static and focused entirely on the merge mechanic.</p>
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-[10px] font-bold px-2 py-0.5 bg-white/5 rounded-full text-white/40 tracking-widest uppercase">03</span>
+            <h2 className="text-sm font-bold text-white uppercase tracking-wider">Technical Environment</h2>
+          </div>
+          <p>We do not incorporate third-party analytics, tracking cookies, or advertising SDKs. The application build is static and optimized entirely for the merging mechanics.</p>
         </section>
         
         <section>
-          <h2 className="text-xl font-bold text-white uppercase tracking-tight mb-2">4. Age Appropriateness</h2>
-          <p>Since no data is collected, the application is suitable for all ages. We comply with COPPA and global privacy standards by simply not gathering data.</p>
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-[10px] font-bold px-2 py-0.5 bg-white/5 rounded-full text-white/40 tracking-widest uppercase">04</span>
+            <h2 className="text-sm font-bold text-white uppercase tracking-wider">Guardian Standards</h2>
+          </div>
+          <p>Since no data collection occurs, the application is compliant with COPPA and global child privacy standards. It is safe for players of all ages.</p>
         </section>
         
-        <section>
-          <h2 className="text-xl font-bold text-white uppercase tracking-tight mb-2">5. Updates</h2>
-          <p>This policy may be updated. The current version was finalized on April 27, 2026.</p>
+        <section className="pt-6 border-t border-white/5">
+          <p className="text-[10px] font-medium text-white/20 uppercase tracking-[0.2em] mb-4">Protocol Finalized: April 27, 2026</p>
+          <p className="text-xs italic bg-white/5 p-4 rounded-2xl border border-white/5">For inquiries regarding this privacy protocol, players may contact the development lead via the official support channel or email: <span className="text-indigo-400 not-italic font-bold">maggieandscience@gmail.com</span></p>
         </section>
       </div>
     </div>
@@ -70,6 +93,7 @@ const CosmicMerge: React.FC = () => {
   const [isPaused, setIsPaused] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [showPrivacy, setShowPrivacy] = useState(false);
+  const [isPrivacyFromUrl, setIsPrivacyFromUrl] = useState(false);
   const [shake, setShake] = useState(0);
 
   const containerRef = useRef<HTMLDivElement>(null);
@@ -196,6 +220,13 @@ const CosmicMerge: React.FC = () => {
     });
     playGameOverSound();
   }, [gameState.status, playGameOverSound]);
+
+  useEffect(() => {
+    if (window.location.pathname.toLowerCase().includes('privacy')) {
+      setShowPrivacy(true);
+      setIsPrivacyFromUrl(true);
+    }
+  }, []);
 
   const spawnParticle = (x: number, y: number, color: string) => {
     for (let i = 0; i < 8; i++) {
@@ -602,13 +633,13 @@ const CosmicMerge: React.FC = () => {
       <AnimatePresence>
         {showPrivacy && (
           <motion.div
-            initial={{ y: '100%' }}
-            animate={{ y: 0 }}
-            exit={{ y: '100%' }}
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className="absolute inset-0 z-[200]"
+            className="absolute inset-0 z-[1000]"
           >
-            <PrivacyPolicy onBack={() => setShowPrivacy(false)} />
+            <PrivacyPolicy onBack={() => setShowPrivacy(false)} isStandalone={isPrivacyFromUrl} />
           </motion.div>
         )}
       </AnimatePresence>
